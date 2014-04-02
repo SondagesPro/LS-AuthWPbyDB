@@ -27,6 +27,11 @@ class AuthWPbyDB extends AuthPluginBase
     static protected $name = 'WordPress DB Authentification';
 
     protected $settings = array(
+        'authwp_dir' => array(
+            'type' => 'string',
+            'label' => 'The directory where WP is (If found : no need to configure DB, example if you put limesurvey in a sub directory : ../).',
+            'default' => ''// Don't set default : preferred methode : same DB than LS with prefix to wp_
+        ),
         'authwp_dbhost' => array(
             'type' => 'string',
             'label' => 'WordPress DB Host (default to LimeSurvey DB Host)'
@@ -67,9 +72,7 @@ class AuthWPbyDB extends AuthPluginBase
 
     public function __construct(PluginManager $manager, $id) {
         parent::__construct($manager, $id);
-        /**
-         * Here you should handle subscribing to the events your plugin will handle
-         */
+
         $this->subscribe('beforeLogin');
         $this->subscribe('newLoginForm');
         $this->subscribe('newUserSession');
@@ -81,7 +84,7 @@ class AuthWPbyDB extends AuthPluginBase
     {
         $oEvent = $this->getEvent();
         // Get configuration settings:
-        if($this->testWpDb())
+        if($this->addWpDb())
         {
             $oEvent->set('success', true);
         }else{
@@ -93,7 +96,7 @@ class AuthWPbyDB extends AuthPluginBase
     public function beforeLogin()
     {
         $oEvent = $this->getEvent();
-        if ($this->testWpDb() && $this->get('authwp_default'))
+        if ($this->addWpDb() && $this->get('authwp_default'))
         {
             $this->getEvent()->set('default', get_class($this));
         }
@@ -101,9 +104,13 @@ class AuthWPbyDB extends AuthPluginBase
 
     public function newLoginForm()
     {
-        $this->getEvent()->getContent($this)
-             ->addContent(CHtml::tag('li', array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
-             ->addContent(CHtml::tag('li', array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
+        if($this->addWpDb()){
+            $this->getEvent()->getContent($this)
+                 ->addContent(CHtml::tag('li', array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
+                 ->addContent(CHtml::tag('li', array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
+        }else{// No login form if unable to access to Wp DB
+
+        }
     }
 
     public function afterLoginFormSubmit()
@@ -181,7 +188,7 @@ class AuthWPbyDB extends AuthPluginBase
     **/
     private function getWpDbUser($sUserName,$sUserPass)
     {
-        if($this->testWpDb())
+        if($this->addWpDb())
         {
             $aUser = Yii::app()->wpdb->createCommand()
                                     ->select('user_login,user_pass,user_nicename,user_email,display_name,ul.meta_value as user_level')
@@ -211,50 +218,73 @@ class AuthWPbyDB extends AuthPluginBase
     **/
     private function addWpDb()
     {
-        $bExist=Yii::app()->getComponent('wpdb',false);
-        if($bExist)// If already exist 
-            return;
-        $sWpDbHost      = $this->get('authwp_dbhost');
-        $sWpDbPort      = $this->get('authwp_dbport');
-        $sWpDbName      = $this->get('authwp_dbname');
-        $sWpDbUser      = $this->get('authwp_dbuser');
-        $sWpDbPassword  = $this->get('authwp_dbpassword');
-        $sWpDbPrefix    = $this->get('authwp_dbprefix');
-        $sWpDbCharset   = "utf8";
-        if($sWpDbHost || $sWpDbPort || $sWpDbName){
-            if(!$sWpDbPort)
-                $sWpDbPort="3306";
+        static $bValid=NULL;
+        if(!is_null($bValid))
+            return $bValid;
+
+        $bWpFileConfig=false;
+        // Start by loading wp-config if we can
+        $sWPdirectory = $this->get('authwp_dir');
+        if(is_file($sWPdirectory."wp-config.php") && is_readable($sWPdirectory."wp-config.php")){
+            $bWpFileConfig=true;
+        }elseif(is_file(Yii::app()->getConfig('rootdir').DIRECTORY_SEPARATOR.$sWPdirectory."wp-config.php") && is_readable(Yii::app()->getConfig('rootdir').DIRECTORY_SEPARATOR.$sWPdirectory."wp-config.php")){
+            $sWPdirectory=Yii::app()->getConfig('rootdir').DIRECTORY_SEPARATOR.$sWPdirectory;
+            $bWpFileConfig=true;
+        }
+        if($bWpFileConfig){
+            define('ABSPATH',dirname(__FILE__) . '/'); // Define absolute path to remove inclusion of wp-settings.php
+            require_once $sWPdirectory."wp-config.php";
+            $sWpDbHost      = DB_HOST;
+            $sWpDbPort      = "3306"; // TODO : fix specific port @link http://codex.wordpress.org/Editing_wp-config.php#MySQL_Alternate_Port
+            $sWpDbName      = DB_NAME;
+            $sWpDbUser      = DB_USER;
+            $sWpDbPassword  = DB_PASSWORD;
+            $sWpDbPrefix    = $table_prefix;
+            $sWpDbCharset   = DB_CHARSET;
             $sConnectionString="mysql:host={$sWpDbHost};port={$sWpDbPort};dbname={$sWpDbName}";
         }else{
-            $sConnectionString=Yii::app()->db->connectionString;
+            $sWpDbHost      = $this->get('authwp_dbhost');
+            $sWpDbPort      = $this->get('authwp_dbport');
+            $sWpDbName      = $this->get('authwp_dbname');
+            $sWpDbUser      = $this->get('authwp_dbuser');
+            $sWpDbPassword  = $this->get('authwp_dbpassword');
+            $sWpDbPrefix    = $this->get('authwp_dbprefix');
+            $sWpDbCharset   = "utf8";
+            if($sWpDbHost || $sWpDbPort || $sWpDbName){
+                if(!$sWpDbPort)
+                    $sWpDbPort="3306";
+                $sConnectionString="mysql:host={$sWpDbHost};port={$sWpDbPort};dbname={$sWpDbName}";
+            }else{
+                $sConnectionString=Yii::app()->db->connectionString;
+            }
+            if(!$sWpDbUser)
+                $sWpDbUser=Yii::app()->db->username;
+            if(!$sWpDbPassword)
+                $sWpDbPassword=Yii::app()->db->password;
         }
-        if(!$sWpDbUser)
-            $sWpDbUser=Yii::app()->db->username;
-        if(!$sWpDbPassword)
-            $sWpDbPassword=Yii::app()->db->password;
-
-        $wpdb = Yii::createComponent(array(
-           'class' => 'CDbConnection',
-             'connectionString'=>$sConnectionString,
-                'username'=>$sWpDbUser,
-                'password'=> $sWpDbPassword,
-                'charset'=>$sWpDbCharset,
-                'emulatePrepare' => true,
-                'tablePrefix' => $sWpDbPrefix,
-        ));
-        Yii::app()->setComponent('wpdb', $wpdb);
-
-    }
-    private function testWpDb()
-    {
-        $this->addWpDb();
-        $sWpDbPrefix = $this->get('authwp_dbprefix');
-        // Test the connexion and return false if NOT
-        if(!in_array($sWpDbPrefix.'options',Yii::app()->wpdb->schema->getTableNames())){
-            return false;
-        }else{
-            return true;
+        // Test if we have a connexion and if this have users and usermeta table.
+        $oConnection=new CDbConnection($sConnectionString,$sWpDbUser,$sWpDbPassword);
+        try {
+            $wpdb = Yii::createComponent(array(
+               'class' => 'CDbConnection',
+                 'connectionString'=>$sConnectionString,
+                    'username'=>$sWpDbUser,
+                    'password'=> $sWpDbPassword,
+                    'charset'=>$sWpDbCharset,
+                    'emulatePrepare' => true,
+                    'tablePrefix' => $sWpDbPrefix,
+            ));
+            Yii::app()->setComponent('wpdb', $wpdb);
+            if(in_array($sWpDbPrefix.'users',Yii::app()->wpdb->schema->getTableNames()) && in_array($sWpDbPrefix.'usermeta',Yii::app()->wpdb->schema->getTableNames()) ){
+                $bValid=true;
+            }else{
+                $bValid=false;
+            }
+        } catch(CDbException $e) {
+            $bValid=false;
         }
+        // Maybe deactivate if false ?
+        return $bValid;
     }
 
 }
