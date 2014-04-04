@@ -249,6 +249,9 @@ class AuthWPbyDB extends AuthPluginBase
             $sWpDbUser      = $this->get('authwp_dbuser');
             $sWpDbPassword  = $this->get('authwp_dbpassword');
             $sWpDbPrefix    = $this->get('authwp_dbprefix');
+            if(is_null($sWpDbPrefix)){
+                $sWpDbPrefix='wp_';
+            }
             $sWpDbCharset   = "utf8";
             if($sWpDbHost || $sWpDbPort || $sWpDbName){
                 if(!$sWpDbPort)
