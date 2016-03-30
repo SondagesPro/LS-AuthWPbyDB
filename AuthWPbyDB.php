@@ -111,7 +111,7 @@ class AuthWPbyDB extends AuthPluginBase
         }
         if($this->addWpDb()){
             $this->getEvent()->getContent($this)
-                 ->addContent(CHtml::tag($tag, array(), "<label for='user'>"  . gT("Username") . "WP</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
+                 ->addContent(CHtml::tag($tag, array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
                  ->addContent(CHtml::tag($tag, array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
         }else{// No login form if unable to access to Wp DB
 
