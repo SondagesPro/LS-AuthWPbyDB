@@ -12,7 +12,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -22,7 +22,7 @@
 class AuthWPbyDB extends AuthPluginBase
 {
     protected $storage = 'DbStorage';
-    
+
     static protected $description = 'A plugin to authenticate user via WordPress DB.';
     static protected $name = 'WordPress DB Authentification';
 
@@ -104,10 +104,15 @@ class AuthWPbyDB extends AuthPluginBase
 
     public function newLoginForm()
     {
+        if(floatval(App()->getConfig("versionnumber")) >= 2.5){
+            $tag="div";
+        }else{
+            $tag="li";
+        }
         if($this->addWpDb()){
             $this->getEvent()->getContent($this)
-                 ->addContent(CHtml::tag('li', array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
-                 ->addContent(CHtml::tag('li', array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
+                 ->addContent(CHtml::tag($tag, array(), "<label for='user'>"  . gT("Username") . "WP</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
+                 ->addContent(CHtml::tag($tag, array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
         }else{// No login form if unable to access to Wp DB
 
         }
@@ -125,6 +130,11 @@ class AuthWPbyDB extends AuthPluginBase
 
     public function newUserSession()
     {
+        $identity = $this->getEvent()->get('identity');
+        if ($identity->plugin != 'AuthWPbyDB')
+        {
+            return;
+        }
         $sUserName = $this->getUserName();
         $sUserPass = $this->getPassword();
 
