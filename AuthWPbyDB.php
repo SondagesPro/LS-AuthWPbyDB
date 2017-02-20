@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  */
 
-class AuthWPbyDB extends AuthPluginBase
+class AuthWPbyDB extends \ls\pluginmanager\AuthPluginBase
 {
     protected $storage = 'DbStorage';
 
@@ -70,9 +70,7 @@ class AuthWPbyDB extends AuthPluginBase
 
     protected $sWpLoad = false;
 
-    public function __construct(PluginManager $manager, $id) {
-        parent::__construct($manager, $id);
-
+    public function init() {
         $this->subscribe('beforeLogin');
         $this->subscribe('newLoginForm');
         $this->subscribe('newUserSession');
