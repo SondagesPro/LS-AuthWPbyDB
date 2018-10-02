@@ -6,7 +6,7 @@
  * @copyright 2014 Denis Chenu <http://sondages.pro>
  * @copyright 2014 Bruce Mahillet de Komet <http://jevaluemaformation.com>
  * @license GPL v3
- * @version 1.1
+ * @version 1.1.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * GNU General Public License for more details.
  */
 
-class AuthWPbyDB extends \ls\pluginmanager\AuthPluginBase
+class AuthWPbyDB extends AuthPluginBase
 {
     protected $storage = 'DbStorage';
 
