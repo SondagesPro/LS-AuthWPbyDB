@@ -102,18 +102,18 @@ class AuthWPbyDB extends AuthPluginBase
 
     public function newLoginForm()
     {
-        if(floatval(App()->getConfig("versionnumber")) >= 2.5){
-            $tag="div";
-        }else{
-            $tag="li";
+        if(!$this->addWpDb()){
+            return;
         }
-        if($this->addWpDb()){
+        if(version_compare(App()->getConfig("versionnumber"),"2.50","<")) {
             $this->getEvent()->getContent($this)
-                 ->addContent(CHtml::tag($tag, array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
-                 ->addContent(CHtml::tag($tag, array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
-        }else{// No login form if unable to access to Wp DB
-
+                 ->addContent(CHtml::tag("li", array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' />"))
+                 ->addContent(CHtml::tag("li", array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' />"));
         }
+        /* @todo : check maxlingth according to current versionnumber */
+        $this->getEvent()->getContent($this)
+             ->addContent(CHtml::tag("div", array(), "<label for='user'>"  . gT("Username") . "</label><input name='user' id='user' type='text' size='40' maxlength='40' value='' class='form-control' />"))
+             ->addContent(CHtml::tag("div", array(), "<label for='password'>"  . gT("Password") . "</label><input name='password' id='password' type='password' size='40' maxlength='40' value='' class='form-control' />"));
     }
 
     public function afterLoginFormSubmit()
@@ -208,7 +208,7 @@ class AuthWPbyDB extends AuthPluginBase
             if(!$aUser)
                 return;
             //Yii::import('plugins.AuthWPbyAPI.third_party.phpass.PasswordHash');
-            require_once dirname(__FILE__).'/third_party/phpass/PasswordHash.php';// DIRECTORY_SEPARATOR not needed
+            require_once dirname(__FILE__).'/third_party/phpass/class-phpass.php';// DIRECTORY_SEPARATOR not needed
             $oHasher = new PasswordHash(8, TRUE);
             $bCheck = $oHasher->CheckPassword($sUserPass, $aUser['user_pass']);
             if($bCheck)
