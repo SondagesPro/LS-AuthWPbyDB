@@ -6,7 +6,7 @@
  * @copyright 2014 Denis Chenu <http://sondages.pro>
  * @copyright 2014 Bruce Mahillet de Komet <http://jevaluemaformation.com>
  * @license GPL v3
- * @version 1.1.1
+ * @version 1.2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ class AuthWPbyDB extends AuthPluginBase
 {
     protected $storage = 'DbStorage';
 
-    static protected $description = 'A plugin to authenticate user via WordPress DB (v1.1)';
+    static protected $description = 'A plugin to authenticate user via WordPress DB (v1.2.0)';
     static protected $name = 'AuthWPbyDB';
 
     protected $settings = array(

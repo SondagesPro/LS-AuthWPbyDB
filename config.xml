@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <metadata>
+        <name>AuthWPbyDB</name>
+        <type>plugin</type>
+        <creationDate>2014-04-01</creationDate>
+        <lastUpdate>2021-06-21</lastUpdate>
+        <author>Denis Chenu</author>
+        <authorUrl>https://sondages.pro</authorUrl>
+        <supportUrl>https://github.com/SondagesPro/LS-AuthWPbyDB/issues</supportUrl>
+        <version>1.2.0</version>
+        <license>GNU General Public License version 3 or later</license>
+        <description><![CDATA[Authentification via WordPress Plugin for LimeSurvey]]></description>
+    </metadata>
+
+    <compatibility>
+        <version>4.0</version>
+    </compatibility>
+
+    <updaters disabled="disabled">
+    </updaters>
+</config>
